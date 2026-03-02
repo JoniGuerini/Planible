@@ -1,0 +1,46 @@
+/* Overlay scroll area: barra NUNCA empurra o conteúdo */
+.planible-scroll-viewport {
+  scrollbar-width: none;
+  -ms-overflow-style: none;
+}
+.planible-scroll-viewport::-webkit-scrollbar {
+  display: none;
+}
+
+.planible-scroll-track {
+  z-index: 10;
+}
+
+.planible-scroll-thumb {
+  background: rgba(255, 255, 255, 0.2);
+  transition: background 0.15s;
+}
+.planible-scroll-thumb:hover {
+  background: rgba(255, 255, 255, 0.35);
+}
+.planible-scroll-thumb:active {
+  background: rgba(255, 255, 255, 0.4);
+}
+
+/* Global: scrollbars nativos sutis (fallback para outros elementos) */
+* {
+  scrollbar-width: thin;
+  scrollbar-color: rgba(255, 255, 255, 0.2) transparent;
+}
+*::-webkit-scrollbar {
+  width: 6px;
+  height: 6px;
+}
+*::-webkit-scrollbar-track {
+  background: transparent;
+}
+*::-webkit-scrollbar-thumb {
+  background: rgba(255, 255, 255, 0.2);
+  border-radius: 3px;
+}
+*::-webkit-scrollbar-thumb:hover {
+  background: rgba(255, 255, 255, 0.35);
+}
+*::-webkit-scrollbar-corner {
+  background: transparent;
+}

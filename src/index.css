@@ -68,8 +68,8 @@
   100% { transform: translateX(200%); }
 }
 
-/* Efeito fita de doce: faixas diagonais que fluem */
-@keyframes candy-tape-flow {
-  0% { transform: translateX(0); }
-  100% { transform: translateX(28px); }
+/* Efeito shimmer: onda de luz suave que atravessa a barra */
+@keyframes flow-shimmer {
+  0% { transform: translateX(-100%); }
+  100% { transform: translateX(450%); }
 }
