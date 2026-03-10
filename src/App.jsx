@@ -1,4 +1,4 @@
-import { useState, useEffect, useRef } from 'react'
+import { useState, useEffect, useRef, useMemo } from 'react'
 import Decimal from 'break_eternity.js'
 import { cn } from '@/lib/utils'
 import { Button } from '@/components/ui/button'
@@ -237,54 +237,51 @@ function clearSaveCache() {
   initialSaveCache = null
 }
 
-// Barra de progresso suave: progresso calculado pelo tempo no rAF (60fps), sem depender do state do App
-// Quando ciclo ≤ 1s: barra estática 100% com efeito de flow (sem animação de carregamento)
-const FAST_CYCLE_MS = 1000
+// Barra de progresso suave: usamos animação CSS para garantir 60FPS fluidos
+// Quando ciclo ≤ 0.25s: barra estática 100% com efeito de flow calmo
+const FAST_CYCLE_MS = 250
 
 function SmoothBar({ cycleStartTime, cycleTimeMs, active, fillClassName, fillDarkClassName, phaseSeed = 0 }) {
-  const [progress, setProgress] = useState(0)
   const isFastCycle = cycleTimeMs > 0 && cycleTimeMs <= FAST_CYCLE_MS
-
-  useEffect(() => {
-    if (!active || !cycleTimeMs || cycleStartTime <= 0 || isFastCycle) {
-      setProgress(0)
-      return
-    }
-    let rafId
-    const tick = () => {
-      const elapsed = (Date.now() - cycleStartTime) % cycleTimeMs
-      setProgress((elapsed / cycleTimeMs) * 100)
-      rafId = requestAnimationFrame(tick)
-    }
-    rafId = requestAnimationFrame(tick)
-    return () => cancelAnimationFrame(rafId)
-  }, [cycleStartTime, cycleTimeMs, active, isFastCycle])
-
   const useFlowMode = active && cycleStartTime > 0 && isFastCycle
-  const scale = useFlowMode ? 1 : (active && cycleStartTime > 0 ? Math.min(1, Math.max(0, progress / 100)) : 0)
+
+  // Sincronização da animação CSS com o tempo do jogo — useMemo evita updates a cada render
+  // (o loop do jogo atualiza a cada 100ms; atualizar animationDelay a cada tick causava jank)
+  const animationStyle = useMemo(() => {
+    if (!active || !cycleTimeMs || cycleStartTime <= 0 || isFastCycle) return {}
+    const elapsed = (Date.now() - cycleStartTime) % cycleTimeMs
+    const delay = -(elapsed / 1000)
+    return {
+      animation: `grow-x ${cycleTimeMs / 1000}s linear infinite`,
+      animationDelay: `${delay}s`,
+    }
+  }, [cycleStartTime, cycleTimeMs, active, isFastCycle])
 
   const fillDark = fillDarkClassName ?? fillClassName
 
   return (
     <>
       <div
-        className="absolute inset-0 rounded-l-lg origin-left overflow-hidden flex flex-col"
-        style={{ transform: `scaleX(${scale})` }}
+        className={cn(
+          "absolute inset-0 rounded-l-lg origin-left overflow-hidden flex flex-col transition-transform duration-200 ease-out bar-gpu-layer",
+          !useFlowMode && !active && "scale-x-0"
+        )}
+        style={useFlowMode ? { transform: 'scaleX(1)' } : animationStyle}
       >
         <div className={cn('flex-1 min-h-0 rounded-none', fillClassName)} />
         <div className={cn('flex-1 min-h-0 rounded-none', fillDark)} />
       </div>
       {useFlowMode && (
         <div
-          className="absolute inset-0 rounded-l-lg overflow-hidden pointer-events-none"
+          className="absolute inset-0 rounded-l-lg overflow-hidden pointer-events-none bar-gpu-layer"
           aria-hidden
         >
           <div
-            className="absolute inset-y-0 w-2/5 rounded-l-lg"
+            className="absolute inset-y-0 w-2/5 rounded-l-lg bar-gpu-layer"
             style={{
-              background: 'linear-gradient(90deg, transparent 0%, rgba(255,255,255,0.04) 10%, rgba(255,255,255,0.12) 30%, rgba(255,255,255,0.2) 50%, rgba(255,255,255,0.12) 70%, rgba(255,255,255,0.04) 90%, transparent 100%)',
-              animation: 'flow-shimmer 4s ease-in-out infinite',
-              animationDelay: `-${(phaseSeed % 4000) / 1000}s`,
+              background: 'linear-gradient(90deg, transparent 0%, rgba(255,255,255,0.05) 20%, rgba(255,255,255,0.2) 50%, rgba(255,255,255,0.05) 80%, transparent 100%)',
+              animation: 'flow-shimmer 2.5s linear infinite',
+              animationDelay: `-${(phaseSeed % 2500) / 1000}s`,
             }}
           />
         </div>
@@ -669,6 +666,7 @@ function App() {
         const cycleTime = rank === 0 ? base : Math.max(MIN_CYCLE_MS_OFFLINE, base / Math.pow(2, rank))
         const upRank = up.doubleProductionRanks[gen.id] ?? 0
         const mult = Math.pow(2, upRank)
+        const cycles = Math.floor(cap / cycleTime)
         const produced = new Decimal(cycles).times(count).times(mult)
 
         const baseProd = getBaseProductionForLine(line.id, gen.id)

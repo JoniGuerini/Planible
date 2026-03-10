@@ -68,8 +68,22 @@
   100% { transform: translateX(200%); }
 }
 
-/* Efeito shimmer: onda de luz suave que atravessa a barra */
+/* Efeito shimmer: onda de luz suave que atravessa a barra (ciclos rápidos) */
 @keyframes flow-shimmer {
-  0% { transform: translateX(-100%); }
-  100% { transform: translateX(450%); }
+  0% { transform: translateX(-100%); opacity: 0.6; }
+  50% { opacity: 1; }
+  100% { transform: translateX(450%); opacity: 0.6; }
+}
+
+/* Barra de progresso do ciclo: easing suave + GPU para 60fps fluidos */
+@keyframes grow-x {
+  from { transform: scaleX(0); }
+  to { transform: scaleX(1); }
+}
+
+/* Classe auxiliar para aceleração por GPU nas barras animadas */
+.bar-gpu-layer {
+  will-change: transform;
+  transform: translateZ(0);
+  backface-visibility: hidden;
 }
